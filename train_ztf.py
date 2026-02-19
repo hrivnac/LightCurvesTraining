@@ -22,6 +22,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 import os
+import time
 
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"   # disable GPU
@@ -41,7 +42,7 @@ MIN_PREFIX = 20      # minimum number of points in a prefix during training
 MAG_JITTER_STD = 0.02
 POINT_DROPOUT_P = 0.05
 
-NUM_EPOCHS = 10 # 100
+NUM_EPOCHS = 2 # 100
 
 
 # ---------------------------
@@ -364,11 +365,42 @@ def compile_and_train(train_ds, val_ds, num_labels, lr=3e-4):
         ],
     )
 
+    #callbacks = [
+    #    tf.keras.callbacks.EarlyStopping(monitor="val_auc_pr", mode="max", patience=8, restore_best_weights=True),
+    #    tf.keras.callbacks.ReduceLROnPlateau(monitor="val_auc_pr", mode="max", factor=0.5, patience=3, min_lr=1e-5),
+    #]
+
+
+    out_dir = "runs/ztf_run1"
+    os.makedirs(out_dir, exist_ok=True)
+
+    ckpt_path = os.path.join(out_dir, "best_model.keras")
+
+    run_dir = os.path.join("runs", time.strftime("%Y%m%d-%H%M%S"))
+    #logdir = os.path.join(run_dir, "tb")
+    #os.makedirs(logdir, exist_ok=True)
+
+    #tb = keras.callbacks.TensorBoard(
+    #    log_dir=logdir,
+    #    profile_batch=0
+    #)
+    
     callbacks = [
-        tf.keras.callbacks.EarlyStopping(monitor="val_auc_pr", mode="max", patience=8, restore_best_weights=True),
-        tf.keras.callbacks.ReduceLROnPlateau(monitor="val_auc_pr", mode="max", factor=0.5, patience=3, min_lr=1e-5),
+        keras.callbacks.ModelCheckpoint(
+            filepath=ckpt_path,
+            monitor="val_auc_pr",     # or "val_loss"
+            mode="max",               # "min" if monitoring val_loss
+            save_best_only=True,
+            save_weights_only=False
+        ),
+        keras.callbacks.EarlyStopping(monitor="val_auc_pr", mode="max", patience=8, restore_best_weights=True),
+        keras.callbacks.ReduceLROnPlateau(monitor="val_auc_pr", mode="max", factor=0.5, patience=3, min_lr=1e-5),
+        #tb,
     ]
 
+
+    #print("TensorBoard logs:", logdir)
+    
     #history = model.fit(train_ds, validation_data=val_ds, epochs=NUM_EPOCHS, callbacks=callbacks)
     history = model.fit(
       train_ds,
@@ -379,6 +411,11 @@ def compile_and_train(train_ds, val_ds, num_labels, lr=3e-4):
       callbacks=callbacks
       )
     
+
+    # Save the final (may equal best if restore_best_weights=True)
+    model.save(os.path.join(out_dir, "final_model.keras"))
+    print("Saved best:", ckpt_path)
+    print("Saved final:", os.path.join(out_dir, "final_model.keras"))
     
     return model, history
 
@@ -419,5 +456,11 @@ if __name__ == "__main__":
     from parse_ztf import build_datasets
     train_ds, val_ds, label2id = build_datasets("all.csv")
     num_labels = len(label2id)
+    
+
+    
     model, hist = compile_and_train(train_ds, val_ds, num_labels=num_labels)
+    
+    
+    
     pass

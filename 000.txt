@@ -15,10 +15,18 @@ WORKDIR /home/hrivnac/work/LSST/LightCurvesTrainig
 podman build -t tf-gpu-pandas .
 
 podman run --rm -it \
-  -v "$PWD":/home/hrivnac/work/LSST/LightCurvesTrainig:Z \
-  -w /home/hrivnac/work/LSST/LightCurvesTrainig \
+  -v "$PWD":/home/hrivnac/work/LSST/LightCurvesTraining:Z \
+  -w /home/hrivnac/work/LSST/LightCurvesTraining \
   tf-gpu-pandas \
   python train_ztf.py 
+
+podman run --rm -it \
+  -p 6006:6006 \
+  -v "$PWD":/home/hrivnac/work/LSST/LightCurvesTraining:Z \
+  -w /home/hrivnac/work/LSST/LightCurvesTraining \
+  tf-gpu-pandas \
+  tensorboard --logdir runs --host 0.0.0.0 --port 6006
+
 
 ToDo:
 - clean
