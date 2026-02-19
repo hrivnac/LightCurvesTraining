@@ -1,0 +1,25 @@
+/etc/subuid:
+hrivnac:524288:65536
+
+/etc/subgid:
+hrivnac:524288:65536
+
+#podman pull tensorflow/tensorflow:latest-gpu   
+podman pull tensorflow/tensorflow  
+
+Dockerfile:
+FROM tensorflow/tensorflow
+RUN python -m pip install --no-cache-dir pandas
+WORKDIR /home/hrivnac/work/LSST/LightCurvesTrainig
+
+podman build -t tf-gpu-pandas .
+
+podman run --rm -it \
+  -v "$PWD":/home/hrivnac/work/LSST/LightCurvesTrainig:Z \
+  -w /home/hrivnac/work/LSST/LightCurvesTrainig \
+  tf-gpu-pandas \
+  python train_ztf.py 
+
+ToDo:
+- clean
+- graphics
