@@ -42,7 +42,8 @@ MIN_PREFIX = 20      # minimum number of points in a prefix during training
 MAG_JITTER_STD = 0.02
 POINT_DROPOUT_P = 0.05
 
-NUM_EPOCHS = 2 # 100
+NUM_EPOCHS = 100 # 100
+OUT_DIR = "runs/ztf_run1"
 
 
 # ---------------------------
@@ -371,7 +372,7 @@ def compile_and_train(train_ds, val_ds, num_labels, lr=3e-4):
     #]
 
 
-    out_dir = "runs/ztf_run1"
+    out_dir = OUT_DIR
     os.makedirs(out_dir, exist_ok=True)
 
     ckpt_path = os.path.join(out_dir, "best_model.keras")
@@ -459,8 +460,10 @@ if __name__ == "__main__":
     
 
     
-    model, hist = compile_and_train(train_ds, val_ds, num_labels=num_labels)
+    model, history = compile_and_train(train_ds, val_ds, num_labels=num_labels)
     
+    from plot_ztf import plot_history
     
+    plot_history(history, OUT_DIR)
     
     pass
