@@ -27,6 +27,18 @@ podman run --rm -it \
   tf-gpu-pandas \
   tensorboard --logdir runs --host 0.0.0.0 --port 6006
 
+python make_label2id.py --train_csv 2024.csv --out runs/ztf_run1/label2id.json
+
+podman run --rm -it \
+  -v "$PWD":/home/hrivnac/work/LSST/LightCurvesTraining:Z \
+  -w /home/hrivnac/work/LSST/LightCurvesTraining \
+  tf-gpu-pandas \
+  python evaluate_ztf.py \
+  --model runs/ztf_run1/best_model.keras \
+  --label2id runs/ztf_run1/label2id.json \
+  --data 2025.csv \
+  --tmax 64 \
+  --out runs/ztf_run1/eval_preds.csv
 
 ToDo:
 - clean

@@ -455,7 +455,7 @@ if __name__ == "__main__":
     #val_ds   = make_dataset(objects_val, batch_size=64, training=False)
 
     from parse_ztf import build_datasets
-    train_ds, val_ds, label2id = build_datasets("all.csv")
+    train_ds, val_ds, label2id = build_datasets("2024.csv")
     num_labels = len(label2id)
     
 
