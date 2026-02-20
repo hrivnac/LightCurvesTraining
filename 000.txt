@@ -38,6 +38,7 @@ podman run --rm -it \
   --label2id runs/ztf_run1/label2id.json \
   --data 2025.csv \
   --tmax 64 \
+  --threshold 0.3 \
   --out runs/ztf_run1/eval_preds.csv
 
 ToDo:

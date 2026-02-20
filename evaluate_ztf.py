@@ -45,6 +45,19 @@ from tensorflow.keras import layers
 import pandas as pd
 import numpy as np
 
+def threshold_sweep(y_true, y_prob, thresholds=(0.01, 0.02, 0.05, 0.1, 0.2, 0.3)):
+    y_true_i = (y_true >= 0.5).astype(np.int32)
+    rows = []
+    for thr in thresholds:
+        y_hat = (y_prob >= thr).astype(np.int32)
+        tp = (y_hat & y_true_i).sum()
+        fp = (y_hat & (1 - y_true_i)).sum()
+        fn = ((1 - y_hat) & y_true_i).sum()
+        prec = tp / (tp + fp + 1e-9)
+        rec  = tp / (tp + fn + 1e-9)
+        f1   = (2*prec*rec) / (prec + rec + 1e-9)
+        rows.append((thr, int(tp), int(fp), int(fn), float(prec), float(rec), float(f1)))
+    return rows
 
 def per_class_report(y_true: np.ndarray,
                      y_prob: np.ndarray,
@@ -426,13 +439,17 @@ def main():
         pred_pos = int((y_prob >= thr).sum())
         print(f"  predicted positives @ {thr:>4}: {pred_pos}")
         y_true = np.stack([o["y"] for o in objects], axis=0)
+
+    print("\nThreshold sweep (micro):")
+    for thr, tp, fp, fn, prec, rec, f1 in threshold_sweep(y_true, y_prob):
+        print(f"thr={thr:>5}: tp={tp} fp={fp} fn={fn}  prec={prec:.3f} rec={rec:.3f} f1={f1:.3f}")
     
-    print("\nGround truth stats:")
-    per_obj = y_true.sum(axis=1)
-    print("  mean labels/object:", float(per_obj.mean()))
-    print("  median labels/object:", float(np.median(per_obj)))
-    print("  fraction objects with 0 labels:", float((per_obj == 0).mean()))
-    print("  total positives:", int(y_true.sum()))    
+        print("\nGround truth stats:")
+        per_obj = y_true.sum(axis=1)
+        print("  mean labels/object:", float(per_obj.mean()))
+        print("  median labels/object:", float(np.median(per_obj)))
+        print("  fraction objects with 0 labels:", float((per_obj == 0).mean()))
+        print("  total positives:", int(y_true.sum()))    
     
     report = per_class_report(
         y_true=y_true,
