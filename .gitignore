@@ -3,4 +3,6 @@
 **/*.log
 **/.zshhistory
 **/#*
-/all.csv
+/*.csv
+/lsst_data
+/runs
