@@ -27,7 +27,12 @@ podman run --rm -it \
   tf-gpu-pandas \
   tensorboard --logdir runs --host 0.0.0.0 --port 6006
 
-python make_label2id.py --train_csv 2024.csv --out runs/ztf_run1/label2id.json
+podman run --rm -it \
+  -v "$PWD":/home/hrivnac/work/LSST/LightCurvesTraining:Z \
+  -w /home/hrivnac/work/LSST/LightCurvesTraining \
+  tf-gpu-pandas \
+  python make_label2id.py \
+  --out runs/ztf_run1/label2id.json
 
 podman run --rm -it \
   -v "$PWD":/home/hrivnac/work/LSST/LightCurvesTraining:Z \
@@ -36,11 +41,64 @@ podman run --rm -it \
   python evaluate_ztf.py \
   --model runs/ztf_run1/best_model.keras \
   --label2id runs/ztf_run1/label2id.json \
-  --data 2025.csv \
   --tmax 64 \
   --threshold 0.3 \
   --out runs/ztf_run1/eval_preds.csv
+  
+  
+  
+podman run --rm -it \
+  -v "$PWD":/home/hrivnac/work/LSST/LightCurvesTraining:Z \
+  -w /home/hrivnac/work/LSST/LightCurvesTraining \
+  tf-gpu-pandas \
+  python pretrain_lsst.py \
+  --data_dir lsst_data \
+  --out_dir runs/lsst_pretrain \
+  --batch 256 \
+  --epochs 20  
+
+podman run --rm -it \
+  -v "$PWD":/home/hrivnac/work/LSST/LightCurvesTraining:Z \
+  -w /home/hrivnac/work/LSST/LightCurvesTraining \
+  tf-gpu-pandas \
+  python plot_pretrain.py \
+  --run_dir runs/lsst_pretrain/20260224-124412 \
+  --data_dir lsst_data \
+  --tmax 96 \
+  --n_examples 3  
+  
+1) pretrain_loss.png
+This is the learning curve during self-supervised training.
+
+x-axis: epoch
+
+y-axis: masked MSE (mean squared error) of predicted magnitudes only at masked points
+
+train loss: computed on the training split
+
+val loss: computed on the validation split
+
+How to read it:
+
+Both curves going down → the encoder is learning useful structure.
+
+Train down, val flat/up → overfitting (less common in self-supervised, but can happen).
+
+Both flat → model not learning (often too high LR, too much masking, or data issues).
+
+Important: because we compute loss only on masked points, the absolute value depends on your magnitude distribution and how hard the masking is. Use it mainly to track improvement and compare runs.  
+  
+
+
+In each band panel, the pred@masked stars should land near the masked true open circles.
+
+In the residual histogram, you want:
+
+centered near 0 (little bias)
+
+relatively narrow (good reconstruction)
+
+long tails are expected for sharp events/outliers.
 
 ToDo:
-- clean
-- graphics
+
